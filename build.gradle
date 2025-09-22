@@ -22,7 +22,8 @@ repositories {
 dependencies {
 
 	// rest template
-	implementation group: 'org.springframework', name: 'org.springframework.web', version: '3.2.2.RELEASE'
+	implementation group: 'org.springframework', name: 'spring-web', version: '5.3.34'
+	implementation group: 'org.springframework', name: 'spring-context', version:'5.3.34'
 
 	// json processing
 	implementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.13.3'
