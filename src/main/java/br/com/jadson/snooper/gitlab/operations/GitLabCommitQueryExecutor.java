@@ -50,7 +50,7 @@ public class GitLabCommitQueryExecutor extends AbstractGitLabQueryExecutor {
         ResponseEntity result;
         do {
             if (this.queryParameters != null && !this.queryParameters.isEmpty()) {
-                parameters = "?" + this.queryParameters + "page=" + page + "&per_page=" + this.pageSize;
+                parameters = "?" + this.queryParameters + "with_stats=true&page=" + page + "&per_page=" + this.pageSize;
             } else {
                 parameters = "?page=" + page + "&per_page=" + this.pageSize;
             }
