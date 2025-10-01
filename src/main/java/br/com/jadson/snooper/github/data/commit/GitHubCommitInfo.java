@@ -50,7 +50,5 @@ public class GitHubCommitInfo {
     public Author author;
     public Committer committer;
     public List<Parent> parents;
-    public CommitStats stats;
-
 
 }

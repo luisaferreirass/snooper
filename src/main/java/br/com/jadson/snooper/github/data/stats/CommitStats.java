@@ -1,4 +1,4 @@
-package br.com.jadson.snooper.github.data.commit;
+package br.com.jadson.snooper.github.data.stats;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 

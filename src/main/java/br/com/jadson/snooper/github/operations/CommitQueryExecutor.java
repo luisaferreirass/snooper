@@ -35,6 +35,10 @@ import br.com.jadson.snooper.github.data.association.graphql.AssociatedPullReque
 import br.com.jadson.snooper.github.data.association.graphql.CommitNode;
 import br.com.jadson.snooper.github.data.association.graphql.ResultGraphQLRepository;
 import br.com.jadson.snooper.github.data.commit.GitHubCommitInfo;
+import br.com.jadson.snooper.github.data.stats.CommitStats;
+import br.com.jadson.snooper.github.data.stats.GitHubCommitStatsInfo;
+import br.com.jadson.snooper.github.data.stats.graphql.CommitStatsNode;
+import br.com.jadson.snooper.github.data.stats.graphql.GraphQLCommitResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.HttpEntity;
@@ -43,9 +47,11 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 
 /**
  * Executes queries of commits
@@ -311,6 +317,113 @@ public class CommitQueryExecutor extends AbstractGitHubQueryExecutor {
         return results;
     }
 
+    public List<GitHubCommitStatsInfo> getCommitsWithStats(String projectFullName, LocalDateTime sinceDate, LocalDateTime untilDate) {
+        validateRepoName(projectFullName);
+
+        List<GitHubCommitStatsInfo> allCommits = new ArrayList<>();
+        String[] repoParts = projectFullName.split("/");
+        String owner = repoParts[0];
+        String repo = repoParts[1];
+
+        String since = sinceDate.toLocalDate().atStartOfDay().atOffset(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT);
+        String until = untilDate.plusDays(1).toLocalDate().atStartOfDay().atOffset(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT);
+
+        String cursor = null;
+        boolean hasNextPage = true;
+
+        System.out.println("Executing getCommitsWithStats for " + projectFullName + " from " + since + " to " + until);
+
+        while (hasNextPage) {
+            String afterClause = (cursor == null) ? "" : ", after: \\\"" + cursor + "\\\"";
+
+            String query = String.format(""+
+                    "repository(owner: \\\"%s\\\", name: \\\"%s\\\") {"+
+                    "  defaultBranchRef {"+
+                    "    target {"+
+                    "      ... on Commit {"+
+                    "        history(since: \\\"%s\\\", until: \\\"%s\\\", first: 100%s) {"+
+                    "          pageInfo {"+
+                    "            endCursor"+
+                    "            hasNextPage"+
+                    "          }"+
+                    "          nodes {"+
+                    "            oid "+
+                    "            id "+
+                    "            url "+
+                    "            comments { totalCount } "+
+                    "            author { user { url login } name email date avatarUrl } "+
+                    "            committer { user { url login } name email date } "+
+                    "            additions "+
+                    "            deletions "+
+                    "            changedFiles: changedFilesIfAvailable "+
+                    "            message "+
+                    "          }"+
+                    "        }"+
+                    "      }"+
+                    "    }"+
+                    "  }"+
+                    "}", owner, repo, since, until, afterClause);
+
+            GraphQLCommitResponse queryResult = executeCommitStatsQuery(query);
+
+            if (queryResult != null && queryResult.data != null && queryResult.data.repository != null &&
+                    queryResult.data.repository.defaultBranchRef != null && queryResult.data.repository.defaultBranchRef.target != null &&
+                    queryResult.data.repository.defaultBranchRef.target.history != null) {
+
+                // Map GraphQL response to GitHubCommitStatsInfo
+                for (CommitStatsNode node : queryResult.data.repository.defaultBranchRef.target.history.nodes) {
+                    GitHubCommitStatsInfo statsInfo = new GitHubCommitStatsInfo();
+
+                    CommitStats commitStats = new CommitStats();
+
+                    statsInfo.sha = node.oid;
+                    statsInfo.nodeId = node.id;
+                    statsInfo.url = node.url;
+                    statsInfo.commentCount = node.comments.totalCount;
+                    statsInfo.message = node.message;
+
+                    commitStats.additions = node.additions;
+                    commitStats.deletions = node.deletions;
+                    commitStats.total = (node.additions + node.deletions);
+
+                    statsInfo.commitStats = commitStats;
+
+                    statsInfo.changedFiles = node.changedFiles;
+
+                    if (node.author != null) {
+                        statsInfo.authorName = node.author.name;
+                        statsInfo.authorEmail = node.author.email;
+                        statsInfo.authorDate = node.author.date;
+                        if (node.author.user != null) {
+                            statsInfo.authorLogin = node.author.user.login;
+                        }
+                    }
+
+                    if (node.committer != null) {
+                        statsInfo.committerName = node.committer.name;
+                        statsInfo.committerEmail = node.committer.email;
+                        statsInfo.committerDate = node.committer.date;
+                        if (node.committer.user != null) {
+                            statsInfo.committerLogin = node.committer.user.login;
+                        }
+                    }
+                    allCommits.add(statsInfo);
+                }
+
+                hasNextPage = queryResult.data.repository.defaultBranchRef.target.history.pageInfo.hasNextPage;
+                cursor = queryResult.data.repository.defaultBranchRef.target.history.pageInfo.endCursor;
+                System.out.println("Page fetched. Commits so far: " + allCommits.size() + ". Has next page: " + hasNextPage);
+
+            } else {
+                System.err.println("!!! No more data or error in GraphQL response. Stopping pagination. !!!");
+                hasNextPage = false;
+            }
+        }
+
+        return allCommits;
+    }
+
+
 
     private ResultGraphQLRepository executeQueryAssociatedPR(String query)  {
 
@@ -337,6 +450,31 @@ public class CommitQueryExecutor extends AbstractGitHubQueryExecutor {
         }
         return result;
 
+    }
+
+    private GraphQLCommitResponse executeCommitStatsQuery(String query) {
+        RestTemplate restTemplate = new RestTemplate();
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "Bearer " + githubToken);
+        headers.set("Accept", "application/json");
+
+        String body = "{\"query\": \"query getCommitsByDateRange {" + query + "}\"}";
+
+        HttpEntity<String> request = new HttpEntity<>(body, headers);
+
+        String jsonResponse = restTemplate.postForObject("https://api.github.com/graphql", request, String.class);
+
+        GraphQLCommitResponse result = null;
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            result = objectMapper.readValue(jsonResponse, GraphQLCommitResponse.class);
+        } catch (JsonProcessingException e) {
+            System.err.println("----------- JsonProcessingException while parsing commit stats -----------");
+            System.err.println("Response JSON: " + jsonResponse);
+            e.printStackTrace();
+            System.err.println("--------------------------------------------------------------------------");
+        }
+        return result;
     }
 
 }
