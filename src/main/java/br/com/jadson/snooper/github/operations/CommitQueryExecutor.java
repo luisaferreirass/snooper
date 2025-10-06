@@ -39,6 +39,7 @@ import br.com.jadson.snooper.github.data.stats.CommitStats;
 import br.com.jadson.snooper.github.data.stats.GitHubCommitStatsInfo;
 import br.com.jadson.snooper.github.data.stats.graphql.CommitStatsNode;
 import br.com.jadson.snooper.github.data.stats.graphql.GraphQLCommitResponse;
+import br.com.jadson.snooper.github.data.stats.mapper.GitHubCommitStatsMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.HttpEntity;
@@ -370,43 +371,8 @@ public class CommitQueryExecutor extends AbstractGitHubQueryExecutor {
                     queryResult.data.repository.defaultBranchRef != null && queryResult.data.repository.defaultBranchRef.target != null &&
                     queryResult.data.repository.defaultBranchRef.target.history != null) {
 
-                // Map GraphQL response to GitHubCommitStatsInfo
                 for (CommitStatsNode node : queryResult.data.repository.defaultBranchRef.target.history.nodes) {
-                    GitHubCommitStatsInfo statsInfo = new GitHubCommitStatsInfo();
-
-                    CommitStats commitStats = new CommitStats();
-
-                    statsInfo.sha = node.oid;
-                    statsInfo.nodeId = node.id;
-                    statsInfo.url = node.url;
-                    statsInfo.commentCount = node.comments.totalCount;
-                    statsInfo.message = node.message;
-
-                    commitStats.additions = node.additions;
-                    commitStats.deletions = node.deletions;
-                    commitStats.total = (node.additions + node.deletions);
-
-                    statsInfo.commitStats = commitStats;
-
-                    statsInfo.changedFiles = node.changedFiles;
-
-                    if (node.author != null) {
-                        statsInfo.authorName = node.author.name;
-                        statsInfo.authorEmail = node.author.email;
-                        statsInfo.authorDate = node.author.date;
-                        if (node.author.user != null) {
-                            statsInfo.authorLogin = node.author.user.login;
-                        }
-                    }
-
-                    if (node.committer != null) {
-                        statsInfo.committerName = node.committer.name;
-                        statsInfo.committerEmail = node.committer.email;
-                        statsInfo.committerDate = node.committer.date;
-                        if (node.committer.user != null) {
-                            statsInfo.committerLogin = node.committer.user.login;
-                        }
-                    }
+                    GitHubCommitStatsInfo statsInfo = GitHubCommitStatsMapper.mapToCommitStatsInfo(node);
                     allCommits.add(statsInfo);
                 }
 
