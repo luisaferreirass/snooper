@@ -2,9 +2,12 @@ package br.com.jadson.snooper.github.operations;
 
 import br.com.jadson.snooper.github.data.association.AssociationCommitPullRequestInfo;
 import br.com.jadson.snooper.github.data.commit.GitHubCommitInfo;
+import br.com.jadson.snooper.github.data.stats.GitHubCommitStatsInfo;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.time.LocalDateTime;
+import java.time.Month;
 import java.util.List;
 
 class CommitQueryExecutorTest {
@@ -82,5 +85,28 @@ class CommitQueryExecutorTest {
         Assertions.assertEquals(0, commits.get(2).pullRequestNodeInfos.size());
 
         Assertions.assertEquals(6, commits.get(1).pullRequestNodeInfos.get(0).number);
+    }
+
+
+    /*
+    * Tests fetching commits with their stats for a repository within a given date range.
+    * */
+    @Test
+    void testGetCommitsWithStats() {
+        CommitQueryExecutor commitExecutor = new CommitQueryExecutor();
+        commitExecutor.setGithubToken(token);
+
+        LocalDateTime init = LocalDateTime.of(2011, Month.JANUARY, 26, 0, 0, 0);
+        LocalDateTime end = LocalDateTime.of(2012, Month.MARCH, 6, 0, 0, 0);
+
+        List<GitHubCommitStatsInfo> commitStatsInfos = commitExecutor.getCommitsWithStats("octocat/Hello-World", init, end);
+
+        Assertions.assertNotNull(commitStatsInfos);
+        Assertions.assertEquals(3, commitStatsInfos.size());
+
+        Assertions.assertEquals("7fd1a60b01f91b314f59955a4e4d4e80d8edf11d",  commitStatsInfos.get(0).sha);
+        Assertions.assertEquals(1,  commitStatsInfos.get(0).commitStats.additions);
+        Assertions.assertEquals(1, commitStatsInfos.get(1).commitStats.additions);
+        Assertions.assertEquals(1, commitStatsInfos.get(1).commitStats.deletions);
     }
 }

@@ -22,7 +22,8 @@ repositories {
 dependencies {
 
 	// rest template
-	implementation group: 'org.springframework', name: 'org.springframework.web', version: '3.2.2.RELEASE'
+	implementation group: 'org.springframework', name: 'spring-web', version: '5.3.34'
+	implementation group: 'org.springframework', name: 'spring-context', version:'5.3.34'
 
 	// json processing
 	implementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.13.3'
@@ -35,9 +36,8 @@ dependencies {
 	// jsoup is a Java library for working with real-world HTML.
 	implementation group: 'org.jsoup', name: 'jsoup', version: '1.13.1'
 
-	compileOnly group: 'org.projectlombok', name: 'lombok', version: '1.18.24'
-	annotationProcessor group: 'org.projectlombok', name: 'lombok', version: '1.18.24'
-
+    compileOnly 'org.projectlombok:lombok:1.18.32'
+    annotationProcessor 'org.projectlombok:lombok:1.18.32'
 	// This is a GraphQL Java implementation
 	implementation 'com.graphql-java:graphql-java:14.0'
 

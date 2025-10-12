@@ -1,5 +1,6 @@
 package br.com.jadson.snooper.gitlab.operations;
 
+import br.com.jadson.snooper.github.data.commit.GitHubCommitInfo;
 import br.com.jadson.snooper.gitlab.data.commit.GitLabCommitInfo;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
@@ -49,7 +50,7 @@ public class GitLabCommitQueryExecutor extends AbstractGitLabQueryExecutor {
         ResponseEntity result;
         do {
             if (this.queryParameters != null && !this.queryParameters.isEmpty()) {
-                parameters = "?" + this.queryParameters + "page=" + page + "&per_page=" + this.pageSize;
+                parameters = "?" + this.queryParameters + "with_stats=true&page=" + page + "&per_page=" + this.pageSize;
             } else {
                 parameters = "?page=" + page + "&per_page=" + this.pageSize;
             }

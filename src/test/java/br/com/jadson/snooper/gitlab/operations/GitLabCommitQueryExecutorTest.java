@@ -19,15 +19,15 @@ class GitLabCommitQueryExecutorTest {
     void testCommitsOfProject(){
 
         GitLabCommitQueryExecutor commitExecutor = new GitLabCommitQueryExecutor();
-        commitExecutor.setQueryParameters(new String[]{"since=2022-05-18T22:26:45Z", "until=2023-06-01T22:26:45Z"});
+        commitExecutor.setQueryParameters(new String[]{"since=2021-05-02T22:26:45Z", "until=2022-05-03T22:26:45Z"});
         commitExecutor.setPageSize(100);
         commitExecutor.setGitlabURL("https://gitlab.com"); // default value, but we can change for gitlab private repositories
         commitExecutor.setGitlabToken(token);
         commitExecutor.setTestEnvironment(true);
-        List<GitLabCommitInfo> commitsInfo = commitExecutor.getCommits("jadsonjs/holter-ci");
+        List<GitLabCommitInfo> commitsInfo = commitExecutor.getCommits("jadsonjs/gitflow");
 
-        Assertions.assertTrue(commitsInfo.size() == 18);
-        Assertions.assertEquals("jadson.santos@ufrn.br", commitsInfo.get(0).committer_email);
+        Assertions.assertTrue(commitsInfo.size() == 16);
+        Assertions.assertEquals("jadsonjs@gmail.com", commitsInfo.get(0).committer_email);
 
     }
 
