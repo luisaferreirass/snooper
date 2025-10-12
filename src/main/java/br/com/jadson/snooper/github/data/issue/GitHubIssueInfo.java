@@ -52,9 +52,9 @@ public class GitHubIssueInfo {
     public String comments_url;
     public String events_url;
     public String html_url;
-    public int id;
+    public long id;
     public String node_id;
-    public int number;
+    public long number;
     public String title;
     public String body;
     public GitHubIssueUserInfo user;

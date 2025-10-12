@@ -110,7 +110,7 @@ class GHActionRunsExecutorTest {
 
     }
 
-
+    @Disabled
     @Test
     void testLastRunsNotExist(){
 

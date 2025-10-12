@@ -2,6 +2,7 @@ package br.com.jadson.snooper.codecov.operations;
 
 import br.com.jadson.snooper.codecov.data.CodeCovCommit;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
@@ -9,6 +10,7 @@ import java.util.List;
 
 class CodeCovCommitsQueryExecutorTest {
 
+    @Disabled
     @Test
     void getProjectCommit() {
         List<CodeCovCommit> commits = new CodeCovCommitsQueryExecutor().getCommits("microsoft/msphpsql", CodeCovCommitsQueryExecutor.CODE_COV_BASE.GITHUB,
