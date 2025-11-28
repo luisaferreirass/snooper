@@ -8,4 +8,5 @@ import java.util.List;
 public class History {
     public PageInfo pageInfo;
     public List<CommitStatsNode> nodes;
+    public int totalCount;
 }
