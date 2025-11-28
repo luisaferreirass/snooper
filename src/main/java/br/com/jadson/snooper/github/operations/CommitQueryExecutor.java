@@ -36,6 +36,7 @@ import br.com.jadson.snooper.github.data.association.graphql.CommitNode;
 import br.com.jadson.snooper.github.data.association.graphql.ResultGraphQLRepository;
 import br.com.jadson.snooper.github.data.commit.GitHubCommitInfo;
 import br.com.jadson.snooper.github.data.stats.CommitStats;
+import br.com.jadson.snooper.github.data.stats.FileStats;
 import br.com.jadson.snooper.github.data.stats.GitHubCommitStatsInfo;
 import br.com.jadson.snooper.github.data.stats.graphql.CommitStatsNode;
 import br.com.jadson.snooper.github.data.stats.graphql.GraphQLCommitResponse;
@@ -387,6 +388,43 @@ public class CommitQueryExecutor extends AbstractGitHubQueryExecutor {
         }
 
         return allCommits;
+    }
+
+    public FileStats getFileStats(String projectFullName, String filePath, LocalDateTime sinceDate, LocalDateTime untilDate){
+        validateRepoName(projectFullName);
+
+        String[] repoParts = projectFullName.split("/");
+        String owner = repoParts[0];
+        String repo = repoParts[1];
+
+        String since = sinceDate.toLocalDate().atStartOfDay().atOffset(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT);
+        String until = untilDate.plusDays(1).toLocalDate().atStartOfDay().atOffset(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT);
+
+        System.out.println("Executing getFileStats for " + filePath + " from " + since + " to " + until);
+
+        String query = String.format(
+                "repository(owner: \\\"%s\\\", name: \\\"%s\\\") { " +
+                        "  defaultBranchRef { " +
+                        "    target { " +
+                        "      ... on Commit { " +
+                        "        history(path: \\\"%s\\\", since: \\\"%s\\\", until: \\\"%s\\\") { " +
+                        "          totalCount " +
+                        "        } " +
+                        "      } " +
+                        "    } " +
+                        "  } " +
+                        "} ",
+                owner, repo, filePath, since, until
+        );
+
+        GraphQLCommitResponse queryResult = executeCommitStatsQuery(query);
+
+        FileStats fileStats = new FileStats();
+        fileStats.churn = queryResult.data.repository.defaultBranchRef.target.history.totalCount;
+        fileStats.path = filePath;
+
+        return fileStats;
+
     }
 
 
