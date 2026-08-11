@@ -10,5 +10,5 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class GitHubFileStats {
     public String path;
-    public int churn;
+    public int commits;
 }
